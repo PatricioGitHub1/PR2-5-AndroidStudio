@@ -8,6 +8,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.widget.TextView;
@@ -17,16 +18,19 @@ public class MainActivity extends AppCompatActivity {
 
     private SensorManager sensorManager;
     private Sensor sensor;
+    private long lastUpdate = 0;
     SensorEventListener sensorListener;
-
+    private static final int SHAKE_THRESHOLD = 800;
     TextView textX;
     TextView textZ;
     TextView textY;
+
+    private float last_x,last_y,last_z;
     final Context context = this;
     final GestureDetector.SimpleOnGestureListener listener = new GestureDetector.SimpleOnGestureListener() {
         @Override
         public boolean onDoubleTap(MotionEvent e) {
-            Toast.makeText(context, "onDoubleTap", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "Se ha hecho un DoubleTap ", Toast.LENGTH_SHORT).show();
             return true;
         }
 
@@ -49,6 +53,8 @@ public class MainActivity extends AppCompatActivity {
         sensorListener = new SensorEventListener() {
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
+                long curTime = System.currentTimeMillis();
+
                 // Valors de l'acceleròmetre en m/s^2
                 float xAcc = sensorEvent.values[0];
                 float yAcc = sensorEvent.values[1];
@@ -62,6 +68,23 @@ public class MainActivity extends AppCompatActivity {
                 textX.setText(String.valueOf(xAcc));
                 textZ.setText(String.valueOf(zAcc));
                 textY.setText(String.valueOf(yAcc));
+
+                curTime = System.currentTimeMillis();
+                long diffTime = (curTime - lastUpdate);
+
+                if (diffTime > 5.0f) {
+                    float speed = Math.abs(xAcc+yAcc+zAcc - last_x - last_y - last_z) / diffTime * 10000;
+                    //Log.i("dNFOO ", "diff time: "+diffTime);
+                    lastUpdate = curTime;
+
+                    if (speed > SHAKE_THRESHOLD) {
+                        Log.i("INFOO", "shake detected w/ speed: " + speed);
+                        Toast.makeText(context, "Se ha hecho un DoubleTap ", Toast.LENGTH_SHORT).show();
+                    }
+                }
+                last_x = xAcc;
+                last_y = yAcc;
+                last_z = zAcc;
             }
 
             @Override
